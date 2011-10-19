@@ -5,12 +5,10 @@ WTF is it?
 
 ## Install
 
-<pre><code>
-(or (eq?
+`(or (eq?
 	 (should!
 	  hopefully
 	  (work (goinstall github.com/ypb/gotdb)))
 	 0)
 	(sh (&& (map make '(clean exp))
-			 ./exp)))
-</code></pre>
+			 ./exp)))`
