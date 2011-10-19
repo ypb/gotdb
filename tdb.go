@@ -29,9 +29,9 @@ func (db *DB) String() (s string) {
 		s += ", Dbg:false"
 	}
 	if db.ctx == nil {
-		s += ", nil}"
+		s += ", ctx:#f}"
 	} else {
-		s += "}"
+		s += ", ctx:#t}"
 	}
 	return
 }
