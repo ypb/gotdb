@@ -4,7 +4,10 @@
 
 package main
 
+// local
 import tdb "./_obj/tdb"
+// {GCIMPORTS=-I,LDIMPORTS=-L}${GOPATH}/pkg/${GOOS}_${GOARCH} make exp
+// import tdb "github.com/ypb/gotdb"
 
 func main() {
 	foo := tdb.New("exp.tdb")
