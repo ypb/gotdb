@@ -5,6 +5,7 @@ WTF is it?
 
 ## Install
 
+<code>
 (or (eq?
 	 (should!
 	  hopefully
@@ -12,3 +13,4 @@ WTF is it?
 	 0)
 	(sh (&& (map make '(clean exp))
 			 ./exp)))
+</code>
