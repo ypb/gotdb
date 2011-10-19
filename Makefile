@@ -11,7 +11,7 @@ GOFILES=tdb.h.c.go
 CGOFILES=tdb.go
 #CGO_LDFLAGS=$(shell pkg-config --libs $(TARG))
 
-CLEANFILES=tdb.h.c.go *~ exp*.tdb exp
+CLEANFILES=*~ exp*.tdb exp
 
 include $(GOROOT)/src/Make.pkg
 
