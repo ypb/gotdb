@@ -10,12 +10,28 @@ import tdb "./_obj/tdb"
 // import tdb "github.com/ypb/gotdb"
 
 func main() {
-	foo := tdb.New("exp.tdb")
-	foo.Dbg = true
-	goo := tdb.Open("exp.tdb", 256, tdb.NOSYNC, tdb.O_RDWR, tdb.USR_RW | tdb.GRP_R | tdb.OTH_R)
-	goo.Dbg = true
-	println(foo.Close())
-	println(goo.Close())
+	foo, _ := tdb.New("exp.tdb")
+	// bar := foo
+	// exp.go:14: implicit assignment of unexported field 'db' of tdb.DB in assignment
+	// good!
+	foo.Debug()
+	goo, _ := tdb.Open("exp.tdb", 256, tdb.NOSYNC, tdb.O_RDWR, tdb.USR_RW|tdb.GRP_R|tdb.OTH_R)
+	println(goo.String())
+	// println("argh!", goo)
+	// goo.Debug() // here we "were" turning off DEBUG since goo is the same obj
+	foo.Close()
+	foo.Close()
+	goo.Close()
+	boo, _ := tdb.New("exp.tdb")
+	// boo.Debug() // now this will turn off foo.Debug()'s on
+	boo.Close()
+	// Pure Insanity! gotta fix this!
+	// foo,_ = tdb.New("exp.tdb")
+	// foo.Debug()
+	// FIXED
+	goo.Close()
+	boo.Close()
+	foo.Close()
 }
 
 // Local Variables:
