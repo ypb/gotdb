@@ -25,7 +25,7 @@ exp: exp.go _obj/$(TARG).a
 	$(LD) $(LDIMPORTS) -o $@ $@.$(O)
 
 fmt:
-	gofmt -d $(CGOFILES)
+	gofmt -d $(CGOFILES) tdb.h.c.go exp.go
 
 # Local Variables:
 # mode: Makefile
