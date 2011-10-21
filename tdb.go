@@ -23,6 +23,7 @@ type DB struct {
 	db *db // hiding bleak reality
 }
 
+// convenience typedef
 type tdb_CTX *C.struct_TDB_CONTEXT
 
 // db type is an actual data structure holding pertinent metadata
@@ -39,7 +40,7 @@ func init() {
 	ns = make(map[string]*db)
 }
 
-// String returns string representation of DB
+// String returns string representation of db struct underlying DB
 func (o DB) String() (s string) {
 	s = "db{pth:\"" + *o.db.pth + "\""
 	if o.db.dbg {
