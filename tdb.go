@@ -36,7 +36,21 @@ type db struct {
 	ctx tdb_CTX // handle me gently
 }
 
-type Error struct{ msg string }
+// Err typo humun. So ugly it makes baby C kraay.
+type Err *Or
+
+// Or type... Weell, u naw no.
+type Or struct {
+	Ret int8
+	Msg string
+}
+
+func error(sts int8, msg string) Err {
+	// funcional overkill but we are guessing well be needing semi-complex
+	// machinationarly of decoding internal tdb strings... or not as pkg/os
+	// may provide errno out of the box, lazy mofo
+	return &Or{sts, msg}
+}
 
 func init() {
 	ns = make(map[string]*db)
@@ -83,7 +97,7 @@ func (file DB) String() string {
 //
 // At the moment above "functionality" is still under developmental
 // investigation.
-func New(path string) (DB, *Error) {
+func New(path string) (DB, Err) {
 	return Open(path, 0, DEFAULT, O_RDWR|O_CREAT, USR_RW)
 }
 
@@ -92,7 +106,7 @@ func New(path string) (DB, *Error) {
 // written in cgo convention:
 //
 // func tdb_open(name const *C.char, hash_size, tdb_flags, open_flags C.int, mode C.mode_t) *C.struct_tdb_context
-func Open(path string, hash_size, tdb_flags, open_flags int, mode uint32) (DB, *Error) {
+func Open(path string, hash_size, tdb_flags, open_flags int, mode uint32) (DB, Err) {
 	name := C.CString(path)
 	defer C.free(unsafe.Pointer(name))
 	var ctx tdb_CTX
@@ -101,7 +115,7 @@ func Open(path string, hash_size, tdb_flags, open_flags int, mode uint32) (DB, *
 		if old.cld {
 			ctx = C.tdb_open(name, C.int(hash_size), C.int(tdb_flags), C.int(open_flags), C.mode_t(mode))
 			if ctx == nil {
-				return DB{old}, &Error{"tdb_open failed"}
+				return DB{old}, error(1, "tdb_open failed")
 			} else {
 				old.cld = false
 				old.ctx = ctx
@@ -120,7 +134,7 @@ func Open(path string, hash_size, tdb_flags, open_flags int, mode uint32) (DB, *
 			println("Open() new ctx == nil")
 			fresh = &db{&path, false, true, ctx}
 			ns[path] = fresh
-			return DB{fresh}, &Error{"tdb_open failed"}
+			return DB{fresh}, error(1, "tdb_open failed")
 		} else {
 			fresh = &db{pth: &path, cld: false, dbg: false, ctx: ctx}
 			ns[path] = fresh
@@ -137,7 +151,7 @@ func Open(path string, hash_size, tdb_flags, open_flags int, mode uint32) (DB, *
 // And here is trivially meaningless cgo signature of the original C function:
 //
 // func tdb_close() C.int
-func (file DB) Close() (int, *Error) {
+func (file DB) Close() Err {
 	dbg := file.db.dbg
 	if dbg {
 		println("tdb.Close()", file.String())
@@ -146,20 +160,20 @@ func (file DB) Close() (int, *Error) {
 		if dbg {
 			println("tdb.Close()", "db.ctx =", file.db.ctx)
 		}
-		return ERR_EINVAL, &Error{"already closed"}
+		return error(ERR_EINVAL, "already closed")
 	}
-	var status = int(C.tdb_close(file.db.ctx))
+	var status = int8(C.tdb_close(file.db.ctx))
 	if dbg {
 		println("tdb.Close()", "tdb_close() ->", status)
 	}
-	if status == 0 {
+	if status == SUCCESS {
 		file.db.cld = true
 		// for now, while testing let us hold on with that one
 		// file.db.ctx = nil // argh! this does not stack up!
-		return status, nil
+		return nil
 	}
 	// TODO: extract proper error string
-	return status, &Error{"non-zero tdb_close status"}
+	return error(status, "SUCCESS not")
 }
 
 // Debug toggles debugging setting on/off. One must be careful not to
