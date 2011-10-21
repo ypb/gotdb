@@ -2,10 +2,10 @@
 // Use of this source code is governed by a LGPL-style
 // license that can be found in the LICENSE file.
 
-// Package gotdb implements Go bindings to C's libtdb (Trivial DataBase)
+// Package gotdb implements Go bindings to C libtdb (Trivial DataBase).
 //
 // TDB is a filesystem or in-memory key/value store in the vein of
-// (G/B)DB/M API, a common DB abstraction layer used by the SAMBA project
+// (G/B)DB/M API, a common DB abstraction layer used by the SAMBA project.
 package tdb
 
 // #cgo LDFLAGS: -ltdb
@@ -15,21 +15,22 @@ package tdb
 import "C"
 import "unsafe"
 
-// ns is NameSpace
+// ns is internal NameSpace.
 var ns map[string]*db
 
-// DB type is a pointer wrappings exposed to the user
+// DB type is a pointer wrapping exposed to the final user of the library.
+// The aim being prevention of limbs being shot off.
 type DB struct {
 	db *db // hiding bleak reality
 }
 
-// convenience typedef
+// convenience typedef.
 type tdb_CTX *C.struct_TDB_CONTEXT
 
-// db type is an actual data structure holding pertinent metadata
+// db type is an actual data structure holding pertinent metadata.
 type db struct {
 	pth *string // path name
-	dbg bool    // to DEBUG or not to DEBUG
+	dbg bool    // to DEBUG or not to DEBUG?
 	cld bool    // if it's closed (testing ctx's behaviour for now)
 	ctx tdb_CTX // handle me gently
 }
@@ -40,7 +41,7 @@ func init() {
 	ns = make(map[string]*db)
 }
 
-// String returns string representation of db struct underlying DB
+// String returns string representation of db struct underlying DB.
 func (o DB) String() (s string) {
 	s = "db{pth:\"" + *o.db.pth + "\""
 	if o.db.dbg {
@@ -61,21 +62,36 @@ func (o DB) String() (s string) {
 	return
 }
 
-// New given a string returns DB. One must keep in mind that given string
-// of the same value New will return fresh *DB refering to the same underlying
-// DB. Performing Close() on any of the *DB opened with the same, unique path
-// will thereafter fail with ERR_EINVAL status, (until another succesful
-// New or Open is executed?)...
+// New given a string representation of a path name always returns DB value
+// along with Error status. In case of the latter being non-nil the former
+// is probably unusable, should be considered "closed" (see further) and
+// can be safely discarded.
+//
+// It's inadvisable to attempt opening already opened paths unless previous
+// initial attempts failed and one considers conditions suitably improved.
+// New will return the same DB value connected with already "touched" path.
+// And although Go will prevent one from rebinding variable containing DB
+// instance to a new name one can contravene this limitation by calling
+// New and binding its return value to a freshly declared variable name. One
+// should feel dully warned.
+//
+// Performing successful Close on any of the various DB instances of the
+// same, unique path will thereafter cause any operation on them to fail with
+// ERR_EINVAL status, hopefully only until another successful New or Open is
+// executed...?
+//
+// At the moment above "functionality" is still under developmental
+// investigation.
 func New(path string) (DB, *Error) {
 	return Open(path, 0, DEFAULT, O_RDWR|O_CREAT, USR_RW)
 }
 
 // Open is used by New with some reasonable default initial values apart from
-// path name. Following is a signature of libtdb's original C tdb_open function
+// path name. Following is a signature of libtdb's original C tdb_open() function
 // written in cgo convention:
 //
 // func tdb_open(name const *C.char, hash_size, tdb_flags, open_flags C.int, mode C.mode_t) *C.struct_tdb_context
-func Open(path string, hash_size, tdb_flags, open_flags int, mode uint32) (o DB, e *Error) {
+func Open(path string, hash_size, tdb_flags, open_flags int, mode uint32) (DB, *Error) {
 	name := C.CString(path)
 	defer C.free(unsafe.Pointer(name))
 	var ctx tdb_CTX
@@ -114,11 +130,13 @@ func Open(path string, hash_size, tdb_flags, open_flags int, mode uint32) (o DB,
 	// return &DB{path, false, ctx}
 }
 
-// Close calls tdb_close on the C's ctx pointer contained in DB struct,
-// rendering it invalid in all other instances of the same name. see New
-// and here is trivially meaningless C signature:
-// func Close() C.int
-func (o DB) Close() (status int, e *Error) {
+// Close calls tdb_close() on the C ctx pointer contained in DB struct,
+// rendering it invalid in all other instances of the same path name (see New).
+// Only on success does it return nil Error along with integer SUCCESS status.
+// And here is trivially meaningless cgo signature of the original C function:
+//
+// func tdb_close() C.int
+func (o DB) Close() (int, *Error) {
 	dbg := o.db.dbg
 	if dbg {
 		println("tdb.Close()", o.String())
@@ -129,7 +147,7 @@ func (o DB) Close() (status int, e *Error) {
 		}
 		return ERR_EINVAL, &Error{"already closed"}
 	}
-	status = int(C.tdb_close(o.db.ctx))
+	var status = int(C.tdb_close(o.db.ctx))
 	if dbg {
 		println("tdb.Close()", "tdb_close() ->", status)
 	}
@@ -143,7 +161,9 @@ func (o DB) Close() (status int, e *Error) {
 	return status, &Error{"non-zero tdb_close status"}
 }
 
-// Debug toggles debugging seting on/off
+// Debug toggles debugging setting on/off. One must be careful not to
+// become casualty of the schizophrenia of detoggling this setting via
+// different variable instances of the same DB.
 func (o DB) Debug() {
 	if o.db.dbg {
 		o.db.dbg = false
