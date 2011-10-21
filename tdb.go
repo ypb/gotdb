@@ -2,10 +2,11 @@
 // Use of this source code is governed by a LGPL-style
 // license that can be found in the LICENSE file.
 
-// Package gotdb implements Go bindings to C libtdb (Trivial DataBase).
+// Package gotdb implements C bindings to the tdb <http://tdb.samba.org/>
+// (Trivial Data Base) library.
 //
 // TDB is a filesystem or in-memory key/value store in the vein of
-// (G/B)DB/M API, a common DB abstraction layer used by the SAMBA project.
+// (G/B)DB/M API, and a common DB abstraction layer used by the SAMBA project.
 package tdb
 
 // #cgo LDFLAGS: -ltdb
@@ -42,24 +43,24 @@ func init() {
 }
 
 // String returns string representation of db struct underlying DB.
-func (o DB) String() (s string) {
-	s = "db{pth:\"" + *o.db.pth + "\""
-	if o.db.dbg {
+func (file DB) String() string {
+	var s = "db{pth:\"" + *file.db.pth + "\""
+	if file.db.dbg {
 		s += ", Dbg:true"
 	} else {
 		s += ", Dbg:false"
 	}
-	if o.db.cld {
+	if file.db.cld {
 		s += ", cld:true"
 	} else {
 		s += ", cld:false"
 	}
-	if o.db.ctx == nil {
+	if file.db.ctx == nil {
 		s += ", ctx:#f}"
 	} else {
 		s += ", ctx:#t}"
 	}
-	return
+	return s
 }
 
 // New given a string representation of a path name always returns DB value
@@ -136,25 +137,25 @@ func Open(path string, hash_size, tdb_flags, open_flags int, mode uint32) (DB, *
 // And here is trivially meaningless cgo signature of the original C function:
 //
 // func tdb_close() C.int
-func (o DB) Close() (int, *Error) {
-	dbg := o.db.dbg
+func (file DB) Close() (int, *Error) {
+	dbg := file.db.dbg
 	if dbg {
-		println("tdb.Close()", o.String())
+		println("tdb.Close()", file.String())
 	}
-	if o.db.cld {
+	if file.db.cld {
 		if dbg {
-			println("tdb.Close()", "db.ctx =", o.db.ctx)
+			println("tdb.Close()", "db.ctx =", file.db.ctx)
 		}
 		return ERR_EINVAL, &Error{"already closed"}
 	}
-	var status = int(C.tdb_close(o.db.ctx))
+	var status = int(C.tdb_close(file.db.ctx))
 	if dbg {
 		println("tdb.Close()", "tdb_close() ->", status)
 	}
 	if status == 0 {
-		o.db.cld = true
+		file.db.cld = true
 		// for now, while testing let us hold on with that one
-		// o.db.ctx = nil // argh! this does not stack up!
+		// file.db.ctx = nil // argh! this does not stack up!
 		return status, nil
 	}
 	// TODO: extract proper error string
@@ -164,11 +165,11 @@ func (o DB) Close() (int, *Error) {
 // Debug toggles debugging setting on/off. One must be careful not to
 // become casualty of the schizophrenia of detoggling this setting via
 // different variable instances of the same DB.
-func (o DB) Debug() {
-	if o.db.dbg {
-		o.db.dbg = false
+func (file DB) Debug() {
+	if file.db.dbg {
+		file.db.dbg = false
 	} else {
-		o.db.dbg = true
+		file.db.dbg = true
 	}
 }
 
