@@ -70,18 +70,19 @@ func New(path string) (DB, *Error) {
 	return Open(path, 0, DEFAULT, O_RDWR|O_CREAT, USR_RW)
 }
 
-// Open is used by New with some reasonably default initial values besides
-// path name. This is Open's signature in a Go caricature of libtdb
-// original C tdb_open function:
-// func Open(name const *C.char, hash_size, tdb_flags, open_flags C.int, mode C.mode_t) *C.struct_tdb_context
-func Open(path string, hash_size, tdb_flags, open_flags C.int, mode C.mode_t) (o DB, e *Error) {
+// Open is used by New with some reasonable default initial values apart from
+// path name. Following is a signature of libtdb's original C tdb_open function
+// written in cgo convention:
+//
+// func tdb_open(name const *C.char, hash_size, tdb_flags, open_flags C.int, mode C.mode_t) *C.struct_tdb_context
+func Open(path string, hash_size, tdb_flags, open_flags int, mode uint32) (o DB, e *Error) {
 	name := C.CString(path)
 	defer C.free(unsafe.Pointer(name))
 	var ctx tdb_CTX
 	if old := ns[path]; old != nil { // now, what do we do?
 		// if db is still "here" in the ns but closed we
 		if old.cld {
-			ctx = C.tdb_open(name, hash_size, tdb_flags, open_flags, mode)
+			ctx = C.tdb_open(name, C.int(hash_size), C.int(tdb_flags), C.int(open_flags), C.mode_t(mode))
 			if ctx == nil {
 				return DB{old}, &Error{"tdb_open failed"}
 			} else {
@@ -97,7 +98,7 @@ func Open(path string, hash_size, tdb_flags, open_flags C.int, mode C.mode_t) (o
 		}
 	} else {
 		var fresh *db
-		ctx = C.tdb_open(name, hash_size, tdb_flags, open_flags, mode)
+		ctx = C.tdb_open(name, C.int(hash_size), C.int(tdb_flags), C.int(open_flags), C.mode_t(mode))
 		if ctx == nil {
 			println("Open() new ctx == nil")
 			fresh = &db{&path, false, true, ctx}
