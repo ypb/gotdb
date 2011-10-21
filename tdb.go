@@ -106,6 +106,48 @@ func New(path string) (DB, Err) {
 // written in cgo convention:
 //
 // func tdb_open(name const *C.char, hash_size, tdb_flags, open_flags C.int, mode C.mode_t) *C.struct_tdb_context
+//
+//  /* tdb_flags */
+//  DEFAULT           /* just a readability place holder */
+//  CLEAR_IF_FIRST    /* beats me... */
+//  INTERNAL          /* don't store on disk */
+//  NOLOCK            /* don't do any locking */
+//  NOMMAP            /* don't use mmap */
+//  CONVERT           /* convert endian (internal use) */
+//  BIGENDIAN         /* header is big-endian (internal use) */
+//  NOSYNC            /* don't use synchronous transactions */
+//  SEQNUM            /* maintain a sequence number */
+//  VOLATILE          /* Activate the per-hashchain freelist, default 5 */
+//  ALLOW_NESTING     /* Allow transactions to nest */
+//  DISALLOW_NESTING  /* Disallow transactions to nest */
+//  INCOMPATIBLE_HASH /* Better hashing: can't be opened by tdb < 1.2.6. */
+//
+//  /* open_flags */
+//  /* 'man 2 open' on *nix, but what of pkg/os? TOPONDER */
+//  O_RDONLY
+//  /* O_WRONLY *//* is invalid */
+//  O_RDWR
+//  O_CREAT, O_TRUNC, O_APPEND
+//  /* well, Ay dunno... */
+//  O_CLOEXEC, O_EXCL
+//  /* O_NOATIME *//* #define __USE_GNU */
+//  O_NOFOLLOW, O_NONBLOCK = O_NDELAY
+//
+//  /* O_CREAT mode */
+//  USR_RW = (S_IWUSR | S_IRUSR) /* helpful shortcut */
+//  USR_RWX                      /* 00700 user (file owner) has read, write and execute permission */
+//  USR_R                        /* 00400 user has read permission */
+//  USR_W                        /* 00200 user has write permission */
+//  USR_X                        /* 00100 user has execute permission */
+//  GRP_RWX                      /* 00070 group has read, write and execute permission */
+//  GRP_R                        /* 00040 group has read permission */
+//  GRP_W                        /* 00020 group has write permission */
+//  GRP_X                        /* 00010 group has execute permission */
+//  OTH_RWX                      /* 00007 others have read, write and execute permission */
+//  OTH_R                        /* 00004 others have read permission */
+//  OTH_W                        /* 00002 others have write permission */
+//  OTH_X                        /* 00001 others have execute permission */
+//
 func Open(path string, hash_size, tdb_flags, open_flags int, mode uint32) (DB, Err) {
 	name := C.CString(path)
 	defer C.free(unsafe.Pointer(name))
