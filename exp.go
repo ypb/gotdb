@@ -10,6 +10,7 @@ import tdb "./_obj/tdb"
 // import tdb "github.com/ypb/gotdb"
 
 func main() {
+	var Or tdb.Err // LULZ
 	foo, _ := tdb.New("exp.tdb")
 	// bar := foo
 	// exp.go:14: implicit assignment of unexported field 'db' of tdb.DB in assignment
@@ -19,8 +20,8 @@ func main() {
 	println(goo.String())
 	// println("argh!", goo)
 	// goo.Debug() // here we "were" turning off DEBUG since goo is the same obj
-	foo.Close()
-	foo.Close()
+	if Or = foo.Close(); Or != nil { println(*Or.Msg) } // safe
+	println(*foo.Close().Msg) // unsafe;-(
 	goo.Close()
 	boo, _ := tdb.New("exp.tdb")
 	// boo.Debug() // now this will turn off foo.Debug()'s on

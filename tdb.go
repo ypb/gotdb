@@ -42,14 +42,14 @@ type Err *Or
 // Or type... Weell, u naw no.
 type Or struct {
 	Ret int8
-	Msg string
+	Msg *string
 }
 
 func error(sts int8, msg string) Err {
 	// funcional overkill but we are guessing well be needing semi-complex
 	// machinationarly of decoding internal tdb strings... or not as pkg/os
 	// may provide errno out of the box, lazy mofo
-	return &Or{sts, msg}
+	return &Or{sts, &msg}
 }
 
 func init() {
