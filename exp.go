@@ -20,7 +20,9 @@ func main() {
 	println(goo.String())
 	// println("argh!", goo)
 	// goo.Debug() // here we "were" turning off DEBUG since goo is the same obj
-	if Or = foo.Close(); Or != nil { println(*Or.Msg) } // safe
+	if Or = foo.Close(); Or != nil {
+		println(*Or.Msg)
+	} // safe
 	println(*foo.Close().Msg) // unsafe;-(
 	goo.Close()
 	boo, _ := tdb.New("exp.tdb")
