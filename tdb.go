@@ -27,6 +27,7 @@ type DB struct {
 
 // convenience typedef.
 type tdb_CTX *C.struct_TDB_CONTEXT
+type tdb_DTA C.struct_TDB_DATA
 
 // db type is an actual data structure holding pertinent metadata.
 type db struct {
@@ -124,7 +125,7 @@ func (file DB) String() string {
 //
 // Performing successful Close on any of the various DB instances of the
 // same, unique path will thereafter cause any operation on them to fail with
-// ERR_EINVAL status, hopefully only until another successful New or Open is
+// ERR_IO status, hopefully only until another successful New or Open is
 // executed...?
 //
 // At the moment above "functionality" is still under developmental
@@ -232,13 +233,13 @@ func (file DB) Close() Error {
 	}
 	if file.db.cld {
 		if dbg {
-			println("tdb.Close()", "db.ctx =", file.db.ctx)
+			println("  tdb.Close()", "db.ctx =", file.db.ctx)
 		}
-		return mkError(ERR_EINVAL, "tdb.Close() already closed")
+		return mkError(ERR_IO, "tdb.Close() already closed")
 	}
 	var status = int(C.tdb_close(file.db.ctx))
 	if dbg {
-		println("tdb.Close()", "tdb_close() ->", status)
+		println("  tdb.Close()", "tdb_close() ->", status)
 	}
 	if status == SUCCESS {
 		file.db.cld = true
@@ -260,6 +261,98 @@ func (file DB) Debug() {
 		file.db.dbg = true
 	}
 }
+
+// NewData converts Go specific data types into "uniform" storage nonsense.
+// In the next iteration we should devise a way to register type specific
+// conversion handlers as in Register(func(interface{}) DATA) or resort
+// to pkg/gob ... anywayz
+//
+func NewData(object interface{}) (DATA, Error) {
+	var data = DATA{Dptr: nil, Dsize: 0}
+	switch o := object.(type) {
+	case []byte:
+		data = DATA{&o[0], uint32(len(o))}
+	case string:
+		data = DATA{&[]byte(o)[0], uint32(len(o))}
+	default:
+		return data, mkError(ERR_EINVAL, "tdb.NewData() unsupported type")
+	}
+	return data, nil
+}
+
+// String wastes cycles and memory by converting lonely pointers back into
+// lengthy arrays.
+//
+func (object DATA) String() string {
+	// LULZ, prolly need unsafe.Pointer here, lazy again...
+	// var i, l uint32
+	// l = object.Dsize
+	// dress := []byte(*([l]object.Dptr))
+	// ret := make([]byte, l)
+	// for i = 0; i < l; i++ {
+	// 	ret[i] = dress[i]
+	// }
+	// TOFIX: Mammameeya! import "strings"... or smth...
+	ret := C.GoStringN((*C.char)(unsafe.Pointer(object.Dptr)), C.int(object.Dsize))
+	return ret
+}
+
+// Store, well, it stores. For now []byte and string, but in the future we
+// should consider exploiting native Go serialization protocol like pkg/gob.
+// Possible flag values are:
+//
+//  /* tdb_store() flags */
+//  REPLACE    /* Unused */
+//  INSERT     /* Don't overwrite an existing entry */
+//  MODIFY     /* Don't create an existing entry    */
+//
+func (file DB) Store(key, value interface{}, flag int) Error {
+	// probably should fail out right on wrong flag type...
+	var err Error
+	var Key, Value DATA
+	if Key, err = NewData(key); err != nil {
+		return mkError(err.Errno(), "tdb.Store() key " + err.String())
+	}
+	if Value, err = NewData(value); err != nil {
+		return mkError(err.Errno(), "tdb.Store() value " + err.String())
+	}
+	dbg := file.db.dbg
+	if dbg {
+		println("tdb.Store()", file.String())
+		print("  tdb.Store() key: ", Key.String(), " value: ", Value.String(), " flag: ")
+		switch flag {
+		case INSERT:
+			println("INSERT")
+		case MODIFY:
+			println("MODIFY")
+		default:
+			println(flag)
+		}
+	}
+	// duplicatti code ;/
+	if file.db.cld {
+		if dbg {
+			println("  tdb.Store()", "db.ctx =", file.db.ctx)
+		}
+		return mkError(ERR_IO, "tdb.Store() already closed")
+	}
+	var cK, cV tdb_DTA
+	// hrmmm... so what did we need this DATA type for?!?
+	// to factor type switch code into one place, i guess...
+	cK.dptr = (*C.uchar)(Key.Dptr)
+	cK.dsize = C.size_t(Key.Dsize)
+	cV.dptr = (*C.uchar)(Value.Dptr)
+	cV.dsize = C.size_t(Value.Dsize)
+	var status = int(C.tdb_store(file.db.ctx, C.TDB_DATA(cK), C.TDB_DATA(cV), C.int(flag)))
+	if status == SUCCESS {
+		return nil
+	}
+	return mkError(status, "tdb.Store() SUCCESS not")
+}
+// my NOTES:
+// looking at the source of libtdb: tdb_store is making a copy of TDB_DATA
+// so for now it seems a o k to pass raw pointers and len()
+// trust...
 
 // Local Variables:
 // mode: Go

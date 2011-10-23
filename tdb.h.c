@@ -63,7 +63,7 @@ enum debug_level
   $DEBUG_TRACE = TDB_DEBUG_TRACE,
 };
 
-typedef TDB_DATA $DATA;
+typedef struct TDB_DATA $DATA;
 /* oh dear... */
 /* typedef TDB_CONTEXT* $CONTEXT; */
 
