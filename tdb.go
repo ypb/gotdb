@@ -90,21 +90,21 @@ func init() {
 
 // String returns string representation of db struct underlying DB.
 func (file DB) String() string {
-	var s = "db{pth:\"" + *file.db.pth + "\""
+	var s = "db{pth: \"" + *file.db.pth + "\""
 	if file.db.dbg {
-		s += ", Dbg:true"
+		s += ", dbg: true"
 	} else {
-		s += ", Dbg:false"
+		s += ", dbg: false"
 	}
 	if file.db.cld {
-		s += ", cld:true"
+		s += ", cld: true"
 	} else {
-		s += ", cld:false"
+		s += ", cld: false"
 	}
 	if file.db.ctx == nil {
-		s += ", ctx:#f}"
+		s += ", ctx: #f}"
 	} else {
-		s += ", ctx:#t}"
+		s += ", ctx: #t}"
 	}
 	return s
 }
