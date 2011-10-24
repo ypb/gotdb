@@ -284,6 +284,10 @@ func NewData(object interface{}) (DATA, Error) {
 // lengthy arrays.
 //
 func (object DATA) String() string {
+	// no! GoStringN can't be this crazy, but just in case
+	if object.Dptr == nil || object.Dsize == 0 {
+		return ""
+	}
 	// LULZ, prolly need unsafe.Pointer here, lazy again...
 	// var i, l uint32
 	// l = object.Dsize

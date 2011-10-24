@@ -21,11 +21,15 @@ func main() {
 	if Or = foo.Store("ala", "ma kota", tdb.INSERT); Or != nil {
 		println("Error0:", Or.String())
 	}
-	if val, Or := foo.Fetch("ala"); Or == nil {
+	var val tdb.DATA
+	if val, Or = foo.Fetch("ala"); Or == nil {
 		println("Value0:", val.String())
 	} else {
 		println("Error1:", Or.String())
 	}
+	val, Or = foo.Fetch("nokey")
+	println("Insanity continues \"" + val.String() + "\"", Or.String())
+
 	goo, _ := tdb.Open("exp.tdb", 256, tdb.NOSYNC, tdb.O_RDWR, tdb.USR_RW|tdb.GRP_R|tdb.OTH_R)
 	println("goo:", goo.String())
 	// println("argh!", goo)
