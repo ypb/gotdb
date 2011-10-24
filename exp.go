@@ -28,7 +28,7 @@ func main() {
 		println("Error1:", Or.String())
 	}
 	val, Or = foo.Fetch("nokey")
-	println("Insanity continues \"" + val.String() + "\"", Or.String())
+	println("Insanity continues \""+val.String()+"\"", Or.String())
 
 	goo, _ := tdb.Open("exp.tdb", 256, tdb.NOSYNC, tdb.O_RDWR, tdb.USR_RW|tdb.GRP_R|tdb.OTH_R)
 	println("goo:", goo.String())
