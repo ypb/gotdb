@@ -311,10 +311,10 @@ func (file DB) Store(key, value interface{}, flag int) Error {
 	var err Error
 	var Key, Value DATA
 	if Key, err = NewData(key); err != nil {
-		return mkError(err.Errno(), "tdb.Store() key " + err.String())
+		return mkError(err.Errno(), "tdb.Store() key "+err.String())
 	}
 	if Value, err = NewData(value); err != nil {
-		return mkError(err.Errno(), "tdb.Store() value " + err.String())
+		return mkError(err.Errno(), "tdb.Store() value "+err.String())
 	}
 	dbg := file.db.dbg
 	if dbg {
@@ -352,7 +352,41 @@ func (file DB) Store(key, value interface{}, flag int) Error {
 // my NOTES:
 // looking at the source of libtdb: tdb_store is making a copy of TDB_DATA
 // so for now it seems a o k to pass raw pointers and len()
-// trust...
+// trust...ing
+
+// Fetch... is more hairy... since we do not have the way of knowing what
+// Goish type exactly have we put in the Store case. For now returning plain,
+// unadorned DATA (GC be damned!). Of course on error DATA has zeroth value...
+//
+func (file DB) Fetch(key interface{}) (DATA, Error) {
+	zero := DATA{nil, 0}
+	var err Error
+	var Key DATA
+	if Key, err = NewData(key); err != nil {
+		return zero, mkError(err.Errno(), "tdb.Fetch() key"+err.String())
+	}
+	// duplicatti code ;/
+	dbg := file.db.dbg
+	if dbg {
+		println("tdb.Fetch()", file.String())
+		println("  tdb.Fetch() key:", Key.String())
+	}
+	if file.db.cld {
+		if dbg {
+			println("  tdb.Fetch()", "db.ctx =", file.db.ctx)
+		}
+		return zero, mkError(ERR_IO, "tdb.Fetch() already closed")
+	}
+	var cK, cV tdb_DTA
+	cK.dptr = (*C.uchar)(Key.Dptr)
+	cK.dsize = C.size_t(Key.Dsize)
+	cV = tdb_DTA(C.tdb_fetch(file.db.ctx, C.TDB_DATA(cK)))
+	if cV.dptr == nil {
+		// TODO: here we really need to get at the REAL errno...
+		return zero, mkError(ERR_EINVAL, "tdb.Fetch() nil TDB_DATA.dptr")
+	}
+	return DATA{(*uint8)(cV.dptr), uint32(cV.dsize)}, nil
+}
 
 // Local Variables:
 // mode: Go

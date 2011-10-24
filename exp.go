@@ -19,16 +19,22 @@ func main() {
 	// good!
 	foo.Debug()
 	if Or = foo.Store("ala", "ma kota", tdb.INSERT); Or != nil {
-		println(Or.String())
+		println("Error0:", Or.String())
+	}
+	if val, Or := foo.Fetch("ala"); Or == nil {
+		println("Value0:", val.String())
+	} else {
+		println("Error1:", Or.String())
 	}
 	goo, _ := tdb.Open("exp.tdb", 256, tdb.NOSYNC, tdb.O_RDWR, tdb.USR_RW|tdb.GRP_R|tdb.OTH_R)
-	println(goo.String())
+	println("goo:", goo.String())
 	// println("argh!", goo)
 	// goo.Debug() // here we "were" turning off DEBUG since goo is the same obj
 	if Or = foo.Close(); Or != nil {
-		println(Or.String())
+		println("Safe Error:", Or.String())
 	} // safe
-	println(foo.Close().String()) // unsafe;-(
+	println("Unsafe Error:", foo.Close().String()) // unsafe;-(
+	// and breaks intended indentation )-;
 	goo.Close()
 	boo, _ := tdb.New("exp.tdb")
 	// boo.Debug() // now this will turn off foo.Debug()'s on
