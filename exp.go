@@ -30,6 +30,13 @@ func main() {
 	}
 	val, Or = foo.Fetch("nokey")
 	println("Insanity continues \""+val.String()+"\"", Or.String())
+	// trivalence of the bivalence AHOY!
+	foo.Store("", "shit my foot is off", tdb.INSERT)
+	val, Or = foo.Fetch("")
+	if Or != nil {
+		print("Error2: \"" + Or.String() + "\" ")
+	}
+	println("Value1: \"" + val.String() + "\"")
 
 	goo, _ := tdb.Open("exp.tdb", 256, tdb.NOSYNC, tdb.O_RDWR, tdb.USR_RW|tdb.GRP_R|tdb.OTH_R)
 	println("goo:", goo.String())

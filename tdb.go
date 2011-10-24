@@ -263,9 +263,13 @@ func (file DB) Debug() {
 }
 
 // NewData converts Go specific data types into "uniform" storage nonsense.
+// Zero values of a given type are converted into zero of the DATA type
+// and given that libtdb permits zeroth length keys and values it's
+// paramount to actually check the Error status while operating on the DB.
+//
 // In the next iteration we should devise a way to register type specific
-// conversion handlers as in Register(func(interface{}) DATA) or resort
-// to pkg/gob ... anywayz
+// conversion handlers as in Register(type string, func(interface{}) DATA)
+// or resort to pkg/gob ... anywayz
 //
 func NewData(object interface{}) (DATA, Error) {
 	var data = DATA{Dptr: nil, Dsize: 0}
@@ -285,7 +289,7 @@ func NewData(object interface{}) (DATA, Error) {
 }
 
 // String wastes cycles and memory by converting lonely pointers back into
-// lengthy arrays.
+// lengthy arrays. Obviously DATA with nil Dptr or 0 Dsize returns "".
 //
 func (object DATA) String() string {
 	// no! GoStringN can't be this crazy, but just in case
@@ -313,6 +317,10 @@ func (object DATA) String() string {
 //  REPLACE    /* Unused */
 //  INSERT     /* Don't overwrite an existing entry */
 //  MODIFY     /* Don't create an existing entry    */
+//
+// It's important to remember that libtdb permits zero length keys and values,
+// therefore one has to check the Error status and not rely on the boolean of
+// DATA.String() == "".
 //
 func (file DB) Store(key, value interface{}, flag int) Error {
 	// probably should fail out right on wrong flag type...
