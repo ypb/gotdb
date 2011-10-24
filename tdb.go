@@ -271,9 +271,13 @@ func NewData(object interface{}) (DATA, Error) {
 	var data = DATA{Dptr: nil, Dsize: 0}
 	switch o := object.(type) {
 	case []byte:
-		data = DATA{&o[0], uint32(len(o))}
+		if l := len(o); l > 0 {
+			data = DATA{&o[0], uint32(l)}
+		}
 	case string:
-		data = DATA{&[]byte(o)[0], uint32(len(o))}
+		if l := len(o); l > 0 {
+			data = DATA{&[]byte(o)[0], uint32(l)}
+		}
 	default:
 		return data, mkError(ERR_EINVAL, "tdb.NewData() unsupported type")
 	}
@@ -323,7 +327,7 @@ func (file DB) Store(key, value interface{}, flag int) Error {
 	dbg := file.db.dbg
 	if dbg {
 		println("tdb.Store()", file.String())
-		print("  tdb.Store() key: ", Key.String(), " value: ", Value.String(), " flag: ")
+		print("  tdb.Store() key: \"", Key.String(), "\" value: \"", Value.String(), "\" flag: ")
 		switch flag {
 		case INSERT:
 			println("INSERT")
@@ -373,7 +377,7 @@ func (file DB) Fetch(key interface{}) (DATA, Error) {
 	dbg := file.db.dbg
 	if dbg {
 		println("tdb.Fetch()", file.String())
-		println("  tdb.Fetch() key:", Key.String())
+		println("  tdb.Fetch() key: \"" + Key.String() + "\"")
 	}
 	if file.db.cld {
 		if dbg {

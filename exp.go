@@ -18,12 +18,13 @@ func main() {
 	// exp.go:14: implicit assignment of unexported field 'db' of tdb.DB in assignment
 	// good!
 	foo.Debug()
-	if Or = foo.Store("ala", "ma kota", tdb.INSERT); Or != nil {
+	// "ma kota" or "nie ma \"\""
+	if Or = foo.Store("ala", "", tdb.INSERT); Or != nil {
 		println("Error0:", Or.String())
 	}
 	var val tdb.DATA
 	if val, Or = foo.Fetch("ala"); Or == nil {
-		println("Value0:", val.String())
+		println("Value0: \"" + val.String() + "\"")
 	} else {
 		println("Error1:", Or.String())
 	}
