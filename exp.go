@@ -23,16 +23,16 @@ func main() {
 		println("Error0:", Or.String())
 	}
 	var val tdb.DATA
-	if val, Or = foo.Fetch("ala"); Or == nil {
+	if val, Or = foo.FetchDATA("ala"); Or == nil {
 		println("Value0: \"" + val.String() + "\"")
 	} else {
 		println("Error1:", Or.String())
 	}
-	val, Or = foo.Fetch("nokey")
+	val, Or = foo.FetchDATA("nokey")
 	println("Insanity continues \""+val.String()+"\"", Or.String())
 	// trivalence of the bivalence AHOY!
 	foo.Store("", "shit my foot is off", tdb.INSERT)
-	val, Or = foo.Fetch("")
+	val, Or = foo.FetchDATA("")
 	if Or != nil {
 		print("Error2: \"" + Or.String() + "\" ")
 	}

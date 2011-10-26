@@ -297,14 +297,6 @@ func (object DATA) String() string {
 	if object.Dptr == nil || object.Dsize <= 0 {
 		return ""
 	}
-	// LULZ, prolly need unsafe.Pointer here, lazy again...
-	// var i, l uint32
-	// l = object.Dsize
-	// dress := []byte(*([l]object.Dptr))
-	// ret := make([]byte, l)
-	// for i = 0; i < l; i++ {
-	// 	ret[i] = dress[i]
-	// }
 	// TOFIX: Mammameeya! import "strings"... or smth...
 	ret := C.GoStringN((*C.char)(unsafe.Pointer(object.Dptr)), C.int(object.Dsize))
 	return ret
@@ -375,8 +367,21 @@ func (file DB) Store(key, value interface{}, flag int) Error {
 // Goish type exactly have we put in the Store case. For now returning plain,
 // unadorned DATA (GC be damned!). Of course on error DATA has zeroth value...
 //
-func (file DB) Fetch(key interface{}) (DATA, Error) {
-	zero := DATA{nil, 0}
+func (file DB) Fetch(key interface{}) (string, Error) {
+	det, err := file.cFetch(key)
+	// but this should work not since .dptr is secret?
+	// guess CGO is more "relaxed"
+	defer C.free(unsafe.Pointer(det.dptr))
+	return det.toString(), err
+}
+
+func (file DB) FetchDATA(key interface{}) (DATA, Error) {
+	det, err := file.cFetch(key)
+	return det.toDATA(), err
+}
+
+func (file DB) cFetch(key interface{}) (tdb_DTA, Error) {
+	zero := tdb_DTA{nil, 0}
 	var err Error
 	var Key DATA
 	if Key, err = NewData(key); err != nil {
@@ -402,23 +407,18 @@ func (file DB) Fetch(key interface{}) (DATA, Error) {
 		// TODO: here we really need to get at the REAL errno...
 		return zero, mkError(ERR_EINVAL, "tdb.Fetch() nil TDB_DATA.dptr")
 	}
-	rety := mkString(cV.dptr, cV.dsize)
-	println("tdb.Fetch() rety: \"" + rety + "\"")
-	return DATA{(*uint8)(cV.dptr), uint32(cV.dsize)}, nil
+	// rety := cV.toString()
+	// println("tdb.Fetch() rety: \"" + rety + "\"")
+	// finalizer HERE? or you'll eventually get lost where what how why but or may be who knows
+	return cV, nil
 }
 
-func mkString(ptr *C.uchar, lth C.size_t) string {
-	if ptr == nil || lth <= 0 {
-		return ""
-	}
-	ret := make([]byte, uint32(lth))
-	if dst := C.memcpy(unsafe.Pointer(&ret[0]), unsafe.Pointer(ptr), lth); dst == nil {
-		panic("memcpy is your friend")
-	}
-	return string(ret)
+func (dat tdb_DTA) toDATA() DATA {
+	return DATA{(*uint8)(dat.dptr), uint32(dat.dsize)}
 }
 
-func (dat tdb_DTA) mkString() string {
+func (dat tdb_DTA) toString() string {
+	// ugh, the freedom to free whereever and wheneever I freelikeit. SPARTA!!11!!!1!
 	if dat.dptr == nil || dat.dsize <= 0 {
 		return ""
 	}
