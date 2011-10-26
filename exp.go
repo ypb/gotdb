@@ -22,21 +22,22 @@ func main() {
 	if Or = foo.Store("ala", "", tdb.INSERT); Or != nil {
 		println("Error0:", Or.String())
 	}
-	var val tdb.DATA
-	if val, Or = foo.FetchDATA("ala"); Or == nil {
-		println("Value0: \"" + val.String() + "\"")
+	// var val tdb.DATA
+	var sval string
+	if sval, Or = foo.Fetch("ala"); Or == nil {
+		println("Value0: \"" + sval + "\"")
 	} else {
 		println("Error1:", Or.String())
 	}
-	val, Or = foo.FetchDATA("nokey")
-	println("Insanity continues \""+val.String()+"\"", Or.String())
+	sval, Or = foo.Fetch("nokey")
+	println("Insanity continues \""+sval+"\"", Or.String())
 	// trivalence of the bivalence AHOY!
 	foo.Store("", "shit my foot is off", tdb.INSERT)
-	val, Or = foo.FetchDATA("")
+	sval, Or = foo.Fetch("")
 	if Or != nil {
 		print("Error2: \"" + Or.String() + "\" ")
 	}
-	println("Value1: \"" + val.String() + "\"")
+	println("Value1: \"" + sval + "\"")
 
 	goo, _ := tdb.Open("exp.tdb", 256, tdb.NOSYNC, tdb.O_RDWR, tdb.USR_RW|tdb.GRP_R|tdb.OTH_R)
 	println("goo:", goo.String())

@@ -365,7 +365,7 @@ func (file DB) Store(key, value interface{}, flag int) Error {
 
 // Fetch... is more hairy... since we do not have the way of knowing what
 // Goish type exactly have we put in the Store case. For now returning plain,
-// unadorned DATA (GC be damned!). Of course on error DATA has zeroth value...
+// string ("" on Error)
 //
 func (file DB) Fetch(key interface{}) (string, Error) {
 	det, err := file.cFetch(key)
@@ -375,6 +375,11 @@ func (file DB) Fetch(key interface{}) (string, Error) {
 	return det.toString(), err
 }
 
+// FetchDATA is unsafe! DATA.Dptr is mere cast from libtdb's *C.uchar.
+// It's hard to Go at it without resorting to plain C. NOT to mention
+// that garbage collector is unaware of it... so YOU are on your own here.
+//
+// Of course on error DATA has zeroth value...
 func (file DB) FetchDATA(key interface{}) (DATA, Error) {
 	det, err := file.cFetch(key)
 	return det.toDATA(), err
