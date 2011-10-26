@@ -12,6 +12,7 @@ package tdb
 // #cgo LDFLAGS: -ltdb
 // #cgo pkg-config: tdb
 // #include <stdlib.h> //free...
+// #include <string.h> //memcpy...
 // #include <tdb.h>
 import "C"
 import "unsafe"
@@ -293,7 +294,7 @@ func NewData(object interface{}) (DATA, Error) {
 //
 func (object DATA) String() string {
 	// no! GoStringN can't be this crazy, but just in case
-	if object.Dptr == nil || object.Dsize == 0 {
+	if object.Dptr == nil || object.Dsize <= 0 {
 		return ""
 	}
 	// LULZ, prolly need unsafe.Pointer here, lazy again...
@@ -401,7 +402,31 @@ func (file DB) Fetch(key interface{}) (DATA, Error) {
 		// TODO: here we really need to get at the REAL errno...
 		return zero, mkError(ERR_EINVAL, "tdb.Fetch() nil TDB_DATA.dptr")
 	}
+	rety := mkString(cV.dptr, cV.dsize)
+	println("tdb.Fetch() rety: \"" + rety + "\"")
 	return DATA{(*uint8)(cV.dptr), uint32(cV.dsize)}, nil
+}
+
+func mkString(ptr *C.uchar, lth C.size_t) string {
+	if ptr == nil || lth <= 0 {
+		return ""
+	}
+	ret := make([]byte, uint32(lth))
+	if dst := C.memcpy(unsafe.Pointer(&ret[0]), unsafe.Pointer(ptr), lth); dst == nil {
+		panic("memcpy is your friend")
+	}
+	return string(ret)
+}
+
+func (dat tdb_DTA) mkString() string {
+	if dat.dptr == nil || dat.dsize <= 0 {
+		return ""
+	}
+	ret := make([]byte, uint32(dat.dsize))
+	if dst := C.memcpy(unsafe.Pointer(&ret[0]), unsafe.Pointer(dat.dptr), dat.dsize); dst == nil {
+		panic("memcpy is your friend")
+	}
+	return string(ret)
 }
 
 // Local Variables:
